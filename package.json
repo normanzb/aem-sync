@@ -11,8 +11,12 @@
     "url": "ssh://git@bitbucket.eflabs.io:7999/~norman.xu/b2c-sync.git"
   },
   "author": "",
-  "license": "ISC",
+  "bin": {
+    "b2c-sync": "./index.js"
+  },
   "dependencies": {
-    "aem-api": "^0.2.3"
+    "aem-api": "^0.2.3",
+    "compromise": "^11.2.1",
+    "minimist": "^1.2.0"
   }
 }
