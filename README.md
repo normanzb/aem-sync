@@ -1,0 +1,1 @@
+`npm install "git+ssh://git@bitbucket.eflabs.io:7999/~norman.xu/b2c-sync.git" -g`
