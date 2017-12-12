@@ -4,7 +4,7 @@ Automatically upload changed source code to remote AEM server.
 
 ## Installation
 
-`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#v0.1.0" -g`
+`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#v0.1.1" -g`
 
 ## Usage
 
@@ -24,4 +24,4 @@ b2c-sync sync --host remotehost --protocol https --port 4503 --username admin --
 
 ## Version
 
-0.1.0
+0.1.1
