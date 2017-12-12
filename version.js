@@ -4,6 +4,6 @@ const FILENAME = 'README.md';
 
 readPkg().then(pkg => {
     var readmeContent = fs.readFileSync(FILENAME, 'utf8');
-    readmeContent = readmeContent.replace('<placeholder>', pkg.version);
+    readmeContent = readmeContent.replace('<placeholder>', new RegExp(pkg.version, 'g'));
     fs.writeFileSync(FILENAME, readmeContent, 'utf8');
 });
