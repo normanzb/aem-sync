@@ -1,6 +1,6 @@
 # Installation
 
-`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#/0.1.3" -g`
+`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#/0.1.4" -g`
 
 # Usage
 
@@ -20,4 +20,4 @@ b2c-sync sync --host remotehost --protocol https --port 4503 --username admin --
 
 # Version
 
-0.1.3
+0.1.4
