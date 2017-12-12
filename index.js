@@ -8,6 +8,7 @@ var xml2js = require('xml2js');
 var AEM = require('aem-api');
 
 const DIR_BASE = path.join('b2c-view', 'jcr_root');
+const FILE_DOT_CONTENT_XML = '.content.xml';
 
 var lexcicon = {rename: 'Verb', change: 'Verb'};
 
@@ -68,6 +69,65 @@ function nodeExists(aem, filePath){
         });
 }
 
+function readXML(absPath) {
+    return Promise.resolve()
+        .then(function(){
+            return new Promise(function(rs, rj) {
+                fs.readFile(absPath, 'utf8', function (err, data) {
+                    if (err) {
+                        rj(err);
+                    }
+                    else {
+                        rs(data);
+                    }
+                });
+            });
+        })
+        .then(function(data){
+            return new Promise(function(rs, rj){
+                console.log(`parsing ${absPath}...`);
+                xml2js.parseString(data, function(err, doc){
+                    if (err) {
+                        rj(err);
+                    }
+                    else {
+                        rs(doc);
+                    }
+                });
+            });
+        });
+}
+
+function getNodePrimaryType(filePath) {
+    var absPath = getAbsPath(filePath);
+    var absContentPath = path.join(absPath, FILE_DOT_CONTENT_XML);
+    var exists = fs.existsSync(absContentPath);
+    var promise = Promise.resolve();
+
+    if (exists) {
+        console.log('Found potential primary type settings, try reading...');
+        promise = readXML(absContentPath)
+            .then(function(doc){
+                if (!doc) {
+                    return;
+                }
+
+                var root = doc['jcr:root'];
+
+                if (!root.$) {
+                    return;
+                }
+
+                var primaryType = root.$['jcr:primaryType'];
+                return primaryType;
+            });
+    }
+    
+    return promise.then(function(primaryType){
+        return primaryType || 'nt:folder';
+    });
+}
+
 function createFolders(aem, filePath) {
     var dirPath = path.dirname(filePath);
     var dirnames = dirPath.split(path.sep);
@@ -85,7 +145,11 @@ function createFolders(aem, filePath) {
                 }
                 else {
                     console.log(`Creating ${current}...`);
-                    return aem.createNode(current, 'nt:folder');
+                    return getNodePrimaryType(current)
+                        .then(function(primaryType){
+                            console.log(`as ${primaryType}...`);
+                            return aem.createNode(current, primaryType);
+                        });
                 }
             });
     }
@@ -117,6 +181,7 @@ function filterXMLAttributes(node){
             (node[key][0] === '[' && node[key][node[key].length - 1] === ']') ||
             typeof node[key] === 'object'
         ) {
+            // TODO
             continue;
         }
         ret[key] = node[key];
@@ -147,43 +212,25 @@ function uploadFile(aem, filePath) {
 function uploadPropertiesChange(aem, filePath) {
     var absPath = getAbsPath(filePath);
     var jcrPath = path.join('/', path.dirname(filePath));
-    var xmlString;
+    var xmlDoc;
 
     return Promise.resolve()
         .then(function(){
-            return new Promise(function(rs, rj) {
-                fs.readFile(absPath, {
-                    encoding: 'utf8'
-                }, function(err, data){
-                    if (err) {
-                        rj(err);
-                        return;
-                    }
-                    rs(data);
-                });
-            });
+            return readXML(absPath);
         })
-        .then(function(data){
-            xmlString = data;
-            return createFolders(aem, path.join(jcrPath, '.content.xml'));
+        .then(function(doc){
+            xmlDoc = doc;
+            return createFolders(aem, path.join(jcrPath, FILE_DOT_CONTENT_XML));
         })
         .then(function(){
-            console.log('parsing .content.xml...');
-            return new Promise(function(rs, rj){
-                xml2js.parseString(xmlString, function(err, result){
-                    if (err) {
-                        rj(err);
-                        return;
-                    }
-                    rs(result);
-                });
-            });
-        })
-        .then(function(root){
-            var propertiesChanges = root && root['jcr:root'] && root['jcr:root'].$;
-
+            var propertiesChanges = xmlDoc && xmlDoc['jcr:root'] && xmlDoc['jcr:root'].$;
             propertiesChanges = filterXMLAttributes(propertiesChanges);
-            console.log('Got property changes ');
+
+            if (Object.keys(propertiesChanges).length <= 0) {
+                return;
+            }
+
+            console.log('Got property changes ', propertiesChanges);
             console.log(`Uploading property changes to "${jcrPath}"...`);
 
             return aem.setProperties(jcrPath, propertiesChanges);
@@ -351,7 +398,7 @@ function sync() {
             if (basename.indexOf('_cq_') === 0){
                 console.log('CQ File is detected.');
             }
-            else if (basename === '.content.xml') {
+            else if (basename === FILE_DOT_CONTENT_XML) {
                 console.log('Property change is detected.');
                 return uploadPropertiesChange(aem, filePath);
             }
