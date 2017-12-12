@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "preversion": "node preversion.js",
-    "version": "node version.js",
+    "version": "node version.js && git commit -am 'bump version in package.json'",
     "postversion": "git push && git push --tags"
   },
   "repository": {
