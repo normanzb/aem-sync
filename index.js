@@ -33,9 +33,21 @@ var args = parseArgs(process.argv.slice(2), {
 var command = args._[0];
 
 function isGitFile(filePath) {
+    return isFileOf(filePath, function(dir){
+        return dir.indexOf('.git') === 0;
+    });
+}
+
+function isInsideNodeModuleFolder(filePath) {
+    return isFileOf(filePath, function(dir){
+        return dir === 'node_modules';
+    });
+}
+
+function isFileOf(filePath, ofWhat) {
     var parts = filePath.split(path.sep);
     for(var i = parts.length; i--;) {
-        if (parts[i].indexOf('.git') === 0) {
+        if (ofWhat(parts[i])) {
             return true;
         }
     }
@@ -310,6 +322,10 @@ function sync() {
 
         // ignore git files
         if (isGitFile(filePath)) {
+            return;
+        }
+
+        if (isInsideNodeModuleFolder(filePath) || basename === 'node_modules') {
             return;
         }
 
