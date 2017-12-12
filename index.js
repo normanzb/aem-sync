@@ -242,10 +242,11 @@ function createDialogBox(aem, filePath) {
                 else {
                     setPropertiesPromise = Promise.resolve();
                 }
-                
+
                 return setPropertiesPromise
                     .then(function(){
                         var promises = [];
+                        var prevPromise = Promise.resolve();
                         for(var key in node) {
                             let subNodes = node[key];
                             let subPath = path.join(curPath, key);
@@ -259,20 +260,23 @@ function createDialogBox(aem, filePath) {
 
                                 console.log(`Found sub node ${key} ${i}`);
                                 
-                                promises.push(
-                                    nodeExists(aem, subPath)
-                                        .then(function(isExist){
-                                            if (!isExist) {
-                                                console.log('subNode', subNode);
-                                                let type = subNode.$['jcr:primaryType'];
-                                                console.log(`Creating sub node ${subPath} as ${type}`);
-                                                return aem.createNode(subPath, type);
-                                            }
-                                        })
-                                        .then(function(){
-                                            return traverse(subPath, subNode);
-                                        })
-                                );
+                                prevPromise = prevPromise
+                                    .then(function(){
+                                        return nodeExists(aem, subPath);
+                                    })
+                                    .then(function(isExist){
+                                        if (!isExist) {
+                                            console.log('subNode', subNode);
+                                            let type = subNode.$['jcr:primaryType'];
+                                            console.log(`Creating sub node ${subPath} as ${type}`);
+                                            return aem.createNode(subPath, type);
+                                        }
+                                    })
+                                    .then(function(){
+                                        return traverse(subPath, subNode);
+                                    });
+
+                                promises.push(prevPromise);
                             }
                         }
 

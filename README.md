@@ -1,6 +1,6 @@
 # Installation
 
-`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#0.0.3" -g`
+`npm install "ssh://git@bitbucket.eflabs.io:7999/sandiego/b2c-sync.git#0.0.4" -g`
 
 # Usage
 
