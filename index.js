@@ -7,7 +7,7 @@ var compromise = require('compromise');
 var xml2js = require('xml2js');
 var AEM = require('aem-api');
 
-const DIR_BASE = path.join('b2c-view', 'jcr_root');
+const DIR_BASE = path.join('jcr_root');
 const FILE_DOT_CONTENT_XML = '.content.xml';
 
 var lexcicon = {rename: 'Verb', change: 'Verb'};
