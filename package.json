@@ -1,5 +1,5 @@
 {
-  "name": "aem-sync",
+  "name": "aem-watch",
   "version": "0.2.0",
   "description": "",
   "main": "index.js",
@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/normanzb/aem-sync.git"
+    "url": "https://github.com/normanzb/aem-watch.git"
   },
   "author": "",
   "bin": {
-    "aem-sync": "./index.js"
+    "aem-watch": "./index.js"
   },
   "dependencies": {
     "aem-api": "^0.2.3",
