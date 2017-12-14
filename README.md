@@ -6,7 +6,7 @@ Not those hassle anymore! With this tool it will cover those chores for you seam
 
  (technically you can even sync your local code with QA server or live server, but that is not recommended, just saying...)
 
-Interesting about it? Get it now by `npm install aem-watch`
+Interested about it? Get it now by `npm install aem-watch`
 
 ### Caveat: 
 
