@@ -16,7 +16,7 @@ Caveat:
 ## Installation
 
 `npm install aem-sync -g`
-`npm install "git+https://github.com/normanzb/aem-sync.git#v0.1.2" -g`
+`npm install "git+https://github.com/normanzb/aem-sync.git#v0.2.0" -g`
 
 ## Usage
 
@@ -36,4 +36,4 @@ b2c-sync sync --base path/to/your/jcr_root --host remotehost --protocol https --
 
 ## Version
 
-0.1.2
+0.2.0
