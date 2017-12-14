@@ -237,31 +237,35 @@ function uploadPropertiesChange(aem, filePath) {
         });
 }
 
+function createCQXMLTree(aem, filePath) {
+    var basename = path.basename(filePath, '.xml');
+    basename = basename.replace(/^_cq_/, 'cq:');
+    var jcrPath = path.join('/', path.dirname(filePath), basename);
+    return createXMLTree(aem, filePath, jcrPath);
+}
+
 function createDialogBox(aem, filePath) {
-    var absPath = getAbsPath(filePath);
     var jcrPath = path.join('/', path.dirname(filePath), path.basename(filePath, '.xml'));
-    var xmlString;
+    return createXMLTree(aem, filePath, jcrPath);
+}
+
+function createXMLTree(aem, filePath, jcrPath) {
+    var absPath = getAbsPath(filePath);
+    var basename = path.basename(jcrPath);
+    var root;
+
+    console.log(`Creating xml tree for ${jcrPath}`);
 
     return Promise.resolve()
         .then(function(){
-            return new Promise(function(rs, rj) {
-                fs.readFile(absPath, {
-                    encoding: 'utf8'
-                }, function(err, data){
-                    if (err) {
-                        rj(err);
-                        return;
-                    }
-                    rs(data);
-                });
-            });
+            return readXML(absPath);
         })
-        .then(function(data){
-            xmlString = data;
+        .then(function(doc){
+            root = doc && doc['jcr:root'];
             return createFolders(aem, jcrPath);
         })
         .then(function(){
-            console.log('Checking if dialog node exists...');
+            console.log(`Checking if ${basename} node exists...`);
             return nodeExists(aem, jcrPath);
         })
         .then(function(isExist){
@@ -272,24 +276,11 @@ function createDialogBox(aem, filePath) {
         })
         .then(function(){
             console.log('Recreating it...');
-            return aem.createNode(jcrPath, 'cq:Dialog');
+            return aem.createNode(jcrPath, root.$['cq:primaryType']);
         })
-        .then(function(){
-            console.log('parsing dialog.xml...');
-            return new Promise(function(rs, rj){
-                xml2js.parseString(xmlString, function(err, result){
-                    if (err) {
-                        rj(err);
-                        return;
-                    }
-                    rs(result);
-                });
-            });
-        })
-        .then(function(root){
-            var tree = root && root['jcr:root'];
 
-            console.log('Start creating dialog tree...');
+        .then(function(){
+            console.log(`Start creating ${basename} tree...`);
             function traverse(curPath, node){
                 var setPropertiesPromise;
                 var props = filterXMLAttributes(node.$);
@@ -343,7 +334,7 @@ function createDialogBox(aem, filePath) {
                     });
             }
 
-            return traverse(jcrPath, tree);
+            return traverse(jcrPath, root);
         });
 }
 
@@ -397,6 +388,7 @@ function sync() {
         (function(){
             if (basename.indexOf('_cq_') === 0){
                 console.log('CQ File is detected.');
+                return createCQXMLTree(aem, filePath);
             }
             else if (basename === FILE_DOT_CONTENT_XML) {
                 console.log('Property change is detected.');
