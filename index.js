@@ -170,6 +170,30 @@ function getAbsPath(filePath) {
     return path.join(process.cwd(), args.base, filePath);
 }
 
+const TYPE_NUMBERS = ['Long', 'Double', 'Decimal'];
+
+function convertType(value) {
+    var ret = value;
+    var found = false;
+
+    for(var i = 0; i < TYPE_NUMBERS.length; i++) {
+        let typeString = '{'+TYPE_NUMBERS[i]+'}';
+        if (ret.indexOf(typeString) !== 0) {
+            continue;
+        }
+
+        ret = ret.replace(typeString, '') * 1;
+        found = true;
+        break;
+    }
+
+    if (found == false) {
+        ret = ret.replace(/^\{.*?\}/, '');
+    }
+
+    return ret;
+}
+
 function filterXMLAttributes(node){
     var ret = {};
     var filtered = ['jcr:created', 'jcr:createdBy', 'jcr:primaryType'];
@@ -184,7 +208,7 @@ function filterXMLAttributes(node){
             // TODO
             continue;
         }
-        ret[key] = node[key];
+        ret[key] = convertType(node[key]);
     }
     return ret;
 }
