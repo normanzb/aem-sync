@@ -32,6 +32,32 @@ var args = parseArgs(process.argv.slice(2), {
 });
 
 var command = args._[0];
+var uploadProcesses = {};
+
+function getClosestSharedParent(dir0, dir1) {
+    var dirs = {};
+    dirs[0] = dir0.split('/');
+    dirs[1] = dir1.split('/');
+    var ret = '';
+
+    dirs[0].unshift();
+    dirs[1].unshift();
+
+    for (var i = 0; i < dirs[0].length; i++) {
+        if (i >= dirs[1].length) {
+            break;
+        }
+
+        if (dirs[0][i] === dirs[1][i]) {
+            ret += (ret ==='' ? dirs[0][i] : '/' + dirs[0][i]);
+        }
+        else {
+            break;
+        }
+    }
+
+    return '/' + ret;
+}
 
 function isGitFile(filePath) {
     return isFileOf(filePath, function(dir){
@@ -134,6 +160,7 @@ function createFolders(aem, filePath) {
     // shift starting '/'
     dirnames.shift();
     var i = 0;
+    var safeFolderFilePath = '/';
 
     function create(index) {
         var current = '/' + dirnames.slice(0, index + 1).join(path.sep);
@@ -141,11 +168,15 @@ function createFolders(aem, filePath) {
         return nodeExists(aem, current)
             .then(function(isExist){
                 if (isExist) {
-                    console.log('It does, move on');    
+                    console.log('It does, move on');
+                    safeFolderFilePath = current;
                 }
                 else {
-                    console.log(`Creating ${current}...`);
-                    return getNodePrimaryType(current)
+                    console.log(`It doesn't, signal and creating ${current}...`);
+                    return signalPartialOff(aem, filePath, safeFolderFilePath)
+                        .then(function(){
+                            return getNodePrimaryType(current); 
+                        })
                         .then(function(primaryType){
                             console.log(`as ${primaryType}...`);
                             return aem.createNode(current, primaryType);
@@ -362,6 +393,115 @@ function createXMLTree(aem, filePath, jcrPath) {
         });
 }
 
+function waitUntilSafe(aem, filePath) {
+    var sharedFolderFilePath;
+
+    console.log('Check if it is safe to proceed ahead with filePath:', filePath);
+
+    for(var key in uploadProcesses) {
+        if (!uploadProcesses.hasOwnProperty(key)) {
+            continue;
+        }
+
+        let processInfo = uploadProcesses[key];
+
+        sharedFolderFilePath = getClosestSharedParent(processInfo.filePath, filePath);
+
+        if (sharedFolderFilePath) {
+            let subscriber = {
+                filePath: filePath,
+                sharedFolderFilePath: sharedFolderFilePath,
+                resolve: null
+            };
+            let promise = new Promise(function(resolve){
+                subscriber.resolve = resolve;
+                processInfo.promise
+                    .then(resolve);
+            });
+            processInfo.subscribers.push(subscriber);
+
+            console.log(`Not safe, process(${processInfo.filePath}) that...`); 
+            console.log(`shared same parent folder(${sharedFolderFilePath}) is found, waiting for safe signal...`);
+
+            return promise
+                .then(function(){
+                    console.log(`safe signal received ${processInfo.filePath}, go ahead...`);
+                    return waitUntilSafe(aem, filePath);
+                });
+        }
+    }
+
+    console.log('Safe, go ahead!');
+    return Promise.resolve();
+}
+
+function signalOn(aem, filePath) {
+    var signal = uploadProcesses[filePath];
+
+    if (!signal) {
+        signal = {
+            filePath: filePath,
+            promise: null,
+            resolve: null,
+            subscribers: []
+        };
+        uploadProcesses[filePath] = signal;
+
+        signal.promise = new Promise(function(resolve){
+            signal.resolve = resolve;
+        });
+    }
+
+    return Promise.resolve();
+}
+
+function signalPartialOff(aem, filePath, safeFolderFilePath) {
+    var signal = uploadProcesses[filePath];
+
+    if (!signal) {
+        return Promise.reject('Something wrong, no signal found while tryinig to send safe signal...');
+    }
+
+    for(var i = 0; i < signal.subscribers.length; i++) {
+        let subscriber = signal.subscribers[i];
+        let sharedFolderFilePath = getClosestSharedParent(subscriber.sharedFolderFilePath, safeFolderFilePath);
+        if (sharedFolderFilePath != null && sharedFolderFilePath.length >= subscriber.sharedFolderFilePath) {
+            console.log(`Firing a partial safe signal for ${subscriber.filePath}`);
+            subscriber.resolve();
+        }
+    }
+}
+
+function signalOff(aem, filePath) {
+    var signal = uploadProcesses[filePath];
+
+    if (signal) {
+        delete uploadProcesses[filePath];
+        console.log(`Firing a complete safe signal for ${filePath}`);
+        signal.resolve();
+    }
+
+    return Promise.resolve();
+}
+
+function runSafe(aem, filePath, callback) {
+    return waitUntilSafe(aem, filePath)
+        .then(function(){
+            return signalOn(aem, filePath);
+        })
+        .then(function(){
+            return callback(aem, filePath);
+        })
+        .then(function(){
+            return signalOff(aem, filePath);
+        }, function(err){
+            return signalOff(aem, filePath)
+                .then(function(){
+                    Promise.reject(err);
+                });
+        });
+}
+
 function sync() {
     var renamedFiles = [];
 
@@ -412,22 +552,22 @@ function sync() {
         (function(){
             if (basename.indexOf('_cq_') === 0){
                 console.log('CQ File is detected.');
-                return createCQXMLTree(aem, filePath);
+                return runSafe(aem, filePath, createCQXMLTree);
             }
             else if (basename === FILE_DOT_CONTENT_XML) {
                 console.log('Property change is detected.');
-                return uploadPropertiesChange(aem, filePath);
+                return runSafe(aem, filePath, uploadPropertiesChange);
             }
             else if (basename === 'dialog.xml') {
                 console.log('Dialog box config change is detected.');
-                return createDialogBox(aem, filePath);
+                return runSafe(aem, filePath, createDialogBox);
             }
             else if (basename.indexOf('.') === 0) {
                 // ignore all the other hidden file
                 return Promise.resolve();
             }
             else {
-                return uploadFile(aem, filePath);
+                return runSafe(aem, filePath, uploadFile);
             }
         })()
             .then(function(){

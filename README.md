@@ -37,3 +37,8 @@ aem-watch sync --base path/to/your/jcr_root --host remotehost --protocol https -
 ## Version
 
 0.3.1
+
+## Known issues
+
+1. Property type is omitted when updating property as underlining API doesn't support setting propoerty type.
+2. Conflict error will be thrown when setting existing node with a new cq:primaryType, you need to delete the node manually in order for aem-watch to recreate it with new primaryType. aem-watch will not delete the node automatically for you now as it requires re-uploading child nodes of newly created node which is un-intuitive.
