@@ -16,7 +16,7 @@ Interested about it? Get it now by `npm install aem-watch`
 ## Installation
 
 `npm install aem-watch -g`
-`npm install "git+https://github.com/normanzb/aem-watch.git#v0.3.1" -g`
+`npm install "git+https://github.com/normanzb/aem-watch.git#v0.3.2" -g`
 
 ## Usage
 
@@ -36,7 +36,7 @@ aem-watch sync --base path/to/your/jcr_root --host remotehost --protocol https -
 
 ## Version
 
-0.3.1
+0.3.2
 
 ## Known issues
 
