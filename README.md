@@ -16,6 +16,7 @@ Interested about it? Get it now by `npm install aem-watch`
 ## Installation
 
 `npm install aem-watch -g`
+
 `npm install "git+https://github.com/normanzb/aem-watch.git#v0.3.2" -g`
 
 ## Usage
