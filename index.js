@@ -521,6 +521,7 @@ function sync() {
         filePath = path.normalize(filePath);
         var basename = path.basename(filePath);
         var absPath = getAbsPath(filePath);
+        var stat;
 
         // ignore git files
         if (isGitFile(filePath)) {
@@ -540,7 +541,12 @@ function sync() {
             return;
         }
 
-        var stat = fs.statSync(absPath);
+        try {
+            stat = fs.statSync(absPath);
+        }
+        catch(ex){
+            return;
+        }
 
         // only upload file not dir
         if (!stat.isFile()) {
@@ -558,7 +564,7 @@ function sync() {
                 console.log('Property change is detected.');
                 return runSafe(aem, filePath, uploadPropertiesChange);
             }
-            else if (basename === 'dialog.xml') {
+            else if (basename.endsWith('.xml')) {
                 console.log('Dialog box config change is detected.');
                 return runSafe(aem, filePath, createDialogBox);
             }
