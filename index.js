@@ -420,8 +420,9 @@ function waitUntilSafe(aem, filePath) {
             });
             processInfo.subscribers.push(subscriber);
 
-            console.log(`Not safe, process(${processInfo.filePath}) that...`); 
-            console.log(`shared same parent folder(${sharedFolderFilePath}) is found, waiting for safe signal...`);
+            console.log(`Not safe, process "(${processInfo.filePath})"`,
+                `shares same parent folder(${sharedFolderFilePath}) is found,`,
+                'waiting for safe signal...');
 
             return promise
                 .then(function(){
@@ -497,7 +498,7 @@ function runSafe(aem, filePath, callback) {
         }, function(err){
             return signalOff(aem, filePath)
                 .then(function(){
-                    Promise.reject(err);
+                    return Promise.reject(err);
                 });
         });
 }
@@ -577,9 +578,9 @@ function sync() {
             }
         })()
             .then(function(){
-                console.log(`${filePath} is uploaded`);
+                console.log(`File: ${filePath} is uploaded`);
             }, function(err){
-                console.log(`${filePath} uploading is failed with error: ${err}`);
+                console.log(`File: ${filePath} uploading is failed with error: ${err}`);
             });
 
     });

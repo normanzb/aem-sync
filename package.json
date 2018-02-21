@@ -17,7 +17,7 @@
     "aem-watch": "./index.js"
   },
   "dependencies": {
-    "aem-api": "^0.2.3",
+    "aem-api": "git+https://github.com/normanzb/node-aem-api.git#v0.2.9",
     "compromise": "^11.2.1",
     "minimist": "^1.2.0",
     "xml2js": "^0.4.19"
