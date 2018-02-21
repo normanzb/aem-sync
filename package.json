@@ -1,6 +1,6 @@
 {
   "name": "aem-watch",
-  "version": "0.3.4",
+  "version": "0.3.3",
   "description": "",
   "main": "index.js",
   "scripts": {
