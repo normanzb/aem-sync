@@ -34,6 +34,14 @@ var args = parseArgs(process.argv.slice(2), {
 var command = args._[0];
 var uploadProcesses = {};
 
+function red(msg) {
+    return `\x1b[31m${msg}\x1b[0m`;
+}
+
+function yellow(msg) {
+    return `\x1b[33m${msg}\x1b[0m`;
+}
+
 function getClosestSharedParent(dir0, dir1) {
     var dirs = {};
     dirs[0] = dir0.split('/');
@@ -154,9 +162,10 @@ function getNodePrimaryType(filePath) {
     });
 }
 
-function createFolders(aem, filePath) {
-    var dirPath = path.dirname(filePath);
+function createFolders(aem, jcrPath) {
+    var dirPath = path.dirname(jcrPath);
     var dirnames = dirPath.split(path.sep);
+    var filePath = jcrPath.substr(1);
     // shift starting '/'
     dirnames.shift();
     var i = 0;
@@ -168,11 +177,12 @@ function createFolders(aem, filePath) {
         return nodeExists(aem, current)
             .then(function(isExist){
                 if (isExist) {
-                    console.log('It does, move on');
+                    console.log(`${current} exists, move on`);
                     safeFolderFilePath = current;
                 }
                 else {
-                    console.log(`It doesn't, signal and creating ${current}...`);
+                    console.log(`${current} doesn't exist,`,
+                        `send a partially off signal and creating ${current}...`);
                     return signalPartialOff(aem, filePath, safeFolderFilePath)
                         .then(function(){
                             return getNodePrimaryType(current); 
@@ -265,31 +275,9 @@ function uploadFile(aem, filePath) {
 }
 
 function uploadPropertiesChange(aem, filePath) {
-    var absPath = getAbsPath(filePath);
     var jcrPath = path.join('/', path.dirname(filePath));
-    var xmlDoc;
 
-    return Promise.resolve()
-        .then(function(){
-            return readXML(absPath);
-        })
-        .then(function(doc){
-            xmlDoc = doc;
-            return createFolders(aem, path.join(jcrPath, FILE_DOT_CONTENT_XML));
-        })
-        .then(function(){
-            var propertiesChanges = xmlDoc && xmlDoc['jcr:root'] && xmlDoc['jcr:root'].$;
-            propertiesChanges = filterXMLAttributes(propertiesChanges);
-
-            if (Object.keys(propertiesChanges).length <= 0) {
-                return;
-            }
-
-            console.log('Got property changes ', propertiesChanges);
-            console.log(`Uploading property changes to "${jcrPath}"...`);
-
-            return aem.setProperties(jcrPath, propertiesChanges);
-        });
+    return createXMLTree(aem, filePath, jcrPath);
 }
 
 function createCQXMLTree(aem, filePath) {
@@ -331,7 +319,7 @@ function createXMLTree(aem, filePath, jcrPath) {
         })
         .then(function(){
             console.log('Recreating it...');
-            return aem.createNode(jcrPath, root.$['cq:primaryType']);
+            return aem.createNode(jcrPath, root.$['jcr:primaryType']);
         })
 
         .then(function(){
@@ -440,6 +428,7 @@ function signalOn(aem, filePath) {
     var signal = uploadProcesses[filePath];
 
     if (!signal) {
+        console.log(`Set signal on for ${filePath}.`);
         signal = {
             filePath: filePath,
             promise: null,
@@ -460,7 +449,9 @@ function signalPartialOff(aem, filePath, safeFolderFilePath) {
     var signal = uploadProcesses[filePath];
 
     if (!signal) {
-        return Promise.reject('Something wrong, no signal found while tryinig to send safe signal...');
+        console.log(red(`signal for ${filePath} cannot be found`));
+        return Promise.reject('Something wrong, ' + 
+            'no signal object was found while tryinig to send safe signal...');
     }
 
     for(var i = 0; i < signal.subscribers.length; i++) {
@@ -471,6 +462,8 @@ function signalPartialOff(aem, filePath, safeFolderFilePath) {
             subscriber.resolve();
         }
     }
+
+    return Promise.resolve();
 }
 
 function signalOff(aem, filePath) {
@@ -496,6 +489,7 @@ function runSafe(aem, filePath, callback) {
         .then(function(){
             return signalOff(aem, filePath);
         }, function(err){
+            console.log(red('`runSafe` method caught an exception'));
             return signalOff(aem, filePath)
                 .then(function(){
                     return Promise.reject(err);
@@ -580,7 +574,7 @@ function sync() {
             .then(function(){
                 console.log(`File: ${filePath} is uploaded`);
             }, function(err){
-                console.log(`File: ${filePath} uploading is failed with error: ${err}`);
+                console.log(red(`File: ${filePath} uploading is failed with error: ${err}`));
             });
 
     });
