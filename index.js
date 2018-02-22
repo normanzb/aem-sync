@@ -38,8 +38,8 @@ function red(msg) {
     return `\x1b[31m${msg}\x1b[0m`;
 }
 
-function yellow(msg) {
-    return `\x1b[33m${msg}\x1b[0m`;
+function green(msg) {
+    return `\x1b[32m${msg}\x1b[0m`;
 }
 
 function getClosestSharedParent(dir0, dir1) {
@@ -572,7 +572,7 @@ function sync() {
             }
         })()
             .then(function(){
-                console.log(`File: ${filePath} is uploaded`);
+                console.log(green(`File: ${filePath} is uploaded`));
             }, function(err){
                 console.log(red(`File: ${filePath} uploading is failed with error: ${err}`));
             });
