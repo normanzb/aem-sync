@@ -6,7 +6,7 @@
   "scripts": {
     "preversion": "node preversion.js",
     "version": "node version.js && git add -A README.md && git commit -m 'bump version in readme'",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags && npm publish"
   },
   "repository": {
     "type": "git",
