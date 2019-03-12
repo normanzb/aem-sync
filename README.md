@@ -1,12 +1,12 @@
 # aem-watch 
 
-Have you ever complained about the complex and slow process of synchronising local source code to your AEM server? Every time you modified a piece of component dialog box, sightly html file or `model.js` you will have to either build the whole project to get it uploaded into your AEM server or edit it in `/crx/de` manually which is prone to making errors. 
+Have you ever moaned about the complexity and slowness of synchronising local source code to your AEM server? Every time you modified a piece of component dialog box, sightly html file or `model.js` you will have to either build the whole project to get it uploaded into your AEM server or edit it in `/crx/de` manually which is prone to making errors. 
 
-Not those hassle anymore! With this tool it will cover those chores for you seamlessly, it automatically detects the file changes on your local hard drive and upload them to the specified AEM server, not matter it is _cq_template.xml or dialog.xml or just plain javascript file. 
+No hassle anymore! With aem-watch covering chores for you seamlessly, all you need to do is to lay back and watch it upload changes to specified AEM server automatically as you save them, not matter the file you change is `_cq_template.xml` or `dialog.xml` or just plain javascript file. 
 
- (technically you can even sync your local code with QA server or live server, but that is not recommended, just saying...)
+(technically you can even sync your local code with QA server or live server, but that is not recommended, just saying...)
 
-Interested about it? Get it now by `npm install aem-watch`
+Get it now by `npm install aem-watch`
 
 ### Caveat: 
 
